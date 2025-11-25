@@ -1,0 +1,712 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>CYBERAGE — Amit Kumar Mahato | Elite Cyber Security</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;500;600;700;800&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<script src="https://kit.fontawesome.com/7c2b2b6d2c.js" crossorigin="anonymous"></script>
+<!-- GOD-LEVEL LIBRARIES -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.0/vanilla-tilt.min.js"></script>
+
+<style>
+:root {
+    --neon-green: #00ff66;
+    --neon-cyan: #00f3ff;
+    --neon-red: #ff003c;
+    --neon-yellow: #fcee0a;
+    --dark-bg: #020202;
+    --hud-bg: rgba(10, 20, 30, 0.85);
+    --hud-border: rgba(0, 243, 255, 0.3);
+}
+
+* { box-sizing: border-box; cursor: none; user-select: none; }
+
+body, html {
+    margin: 0; padding: 0; width: 100%;
+    background-color: var(--dark-bg);
+    color: #e0f7ff;
+    font-family: 'Rajdhani', sans-serif;
+    overflow-x: hidden;
+}
+
+/* === CUSTOM CROSSHAIR CURSOR === */
+.cursor-dot {
+    width: 6px; height: 6px; background: var(--neon-red);
+    position: fixed; top: 0; left: 0;
+    transform: translate(-50%, -50%); border-radius: 50%;
+    z-index: 10000; pointer-events: none;
+    box-shadow: 0 0 10px var(--neon-red);
+}
+.cursor-outline {
+    width: 40px; height: 40px;
+    border: 1px solid var(--neon-cyan);
+    position: fixed; top: 0; left: 0;
+    transform: translate(-50%, -50%);
+    z-index: 9999; pointer-events: none;
+    transition: width 0.1s, height 0.1s;
+}
+.cursor-outline::after, .cursor-outline::before {
+    content: ''; position: absolute; top: 50%; left: 50%;
+    background: rgba(0, 243, 255, 0.5); transform: translate(-50%, -50%);
+}
+.cursor-outline::after { width: 100%; height: 1px; }
+.cursor-outline::before { width: 1px; height: 100%; }
+
+/* === LOADING SCREEN (BOOT SEQUENCE) === */
+#boot-sequence {
+    position: fixed; inset: 0; z-index: 20000;
+    background: #000;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    font-family: 'Share Tech Mono', monospace;
+}
+.boot-text {
+    font-size: 2rem; color: var(--neon-green);
+    text-shadow: 0 0 10px var(--neon-green);
+    opacity: 0; margin: 10px 0; text-align: center;
+}
+.loader-bar {
+    width: 300px; height: 4px; background: #111;
+    margin-top: 20px; position: relative; overflow: hidden;
+    display: none;
+}
+.loader-progress {
+    width: 0%; height: 100%; background: var(--neon-cyan);
+    box-shadow: 0 0 15px var(--neon-cyan);
+}
+
+/* === BACKGROUNDS === */
+#canvas-container { position: fixed; inset: 0; z-index: -1; opacity: 0.5; }
+.grid-overlay {
+    position: fixed; inset: 0; z-index: -1;
+    background-image: 
+        linear-gradient(rgba(0, 243, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 243, 255, 0.05) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+}
+
+/* === LOGO (TOP LEFT) === */
+.logo-container {
+    position: fixed; top: 25px; left: 25px; z-index: 100;
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+    color: #fff;
+    border: 2px solid var(--neon-green);
+    padding: 5px 15px;
+    background: rgba(0,0,0,0.8);
+    box-shadow: 0 0 15px rgba(0, 255, 102, 0.2);
+    cursor: pointer;
+    transition: 0.3s;
+}
+.logo-container:hover {
+    background: var(--neon-green);
+    color: #000;
+    box-shadow: 0 0 30px var(--neon-green);
+}
+.logo-main { font-size: 1.2rem; letter-spacing: 2px; }
+.logo-sub { font-size: 0.6rem; letter-spacing: 1px; color: var(--neon-cyan); text-align: center; margin-top: -2px; }
+.logo-container:hover .logo-sub { color: #000; }
+
+/* === LAYOUT === */
+.container { max-width: 1400px; margin: 0 auto; padding: 20px; position: relative; z-index: 10; }
+
+/* === HERO SECTION === */
+header { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; position: relative; }
+
+/* Glitch Title */
+.title-wrapper { position: relative; display: inline-block; }
+h1 {
+    font-family: 'Orbitron', sans-serif; font-size: 6vw;
+    margin: 0; line-height: 0.9; color: #fff;
+    text-transform: uppercase; letter-spacing: 5px;
+    text-shadow: 0 0 30px rgba(0, 243, 255, 0.4);
+    position: relative;
+    z-index: 2;
+}
+.owner-tag {
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--neon-yellow);
+    font-size: 1.2rem;
+    margin-top: 10px;
+    margin-left: 5px;
+    letter-spacing: 3px;
+    text-shadow: 0 0 10px var(--neon-yellow);
+    display: inline-block;
+    border-left: 3px solid var(--neon-yellow);
+    padding-left: 10px;
+}
+
+.role-badge {
+    display: inline-block; background: rgba(0, 255, 102, 0.1);
+    border: 1px solid var(--neon-green); color: var(--neon-green);
+    padding: 5px 15px; font-family: 'Share Tech Mono';
+    margin-top: 25px; font-size: 1.2rem; letter-spacing: 2px;
+}
+
+/* === GAME UI / HUD CARDS === */
+.hud-panel {
+    background: linear-gradient(135deg, rgba(10,20,30,0.9), rgba(0,0,0,0.95));
+    border: 1px solid rgba(0, 243, 255, 0.2);
+    position: relative; padding: 25px;
+    clip-path: polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px);
+    transition: all 0.3s ease;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+}
+.hud-panel:hover {
+    border-color: var(--neon-cyan);
+    box-shadow: 0 0 30px rgba(0, 243, 255, 0.15);
+    transform: translateY(-5px);
+}
+.hud-panel::before, .hud-panel::after {
+    content: ''; position: absolute; width: 10px; height: 10px; transition: 0.3s;
+}
+.hud-panel::before { top: 0; left: 0; border-top: 2px solid var(--neon-cyan); border-left: 2px solid var(--neon-cyan); }
+.hud-panel::after { bottom: 0; right: 0; border-bottom: 2px solid var(--neon-cyan); border-right: 2px solid var(--neon-cyan); }
+
+/* === INVENTORY GRID (SKILLS) === */
+.inventory-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;
+    margin-top: 20px;
+}
+.item-slot {
+    background: rgba(0, 10, 15, 0.8);
+    border: 1px solid #333;
+    aspect-ratio: 1;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    position: relative;
+    transition: 0.2s;
+    cursor: pointer;
+}
+.item-slot:hover {
+    border-color: var(--neon-green);
+    background: rgba(0, 255, 102, 0.05);
+    box-shadow: inset 0 0 20px rgba(0, 255, 102, 0.1);
+}
+.item-icon { font-size: 2.5rem; color: #555; transition: 0.3s; }
+.item-slot:hover .item-icon { color: #fff; text-shadow: 0 0 10px var(--neon-green); transform: scale(1.1); }
+.item-name {
+    font-family: 'Share Tech Mono'; font-size: 0.8rem; color: var(--neon-cyan);
+    margin-top: 10px; text-transform: uppercase;
+}
+.item-level {
+    position: absolute; top: 5px; right: 5px;
+    font-size: 0.6rem; color: #888; font-family: 'Orbitron';
+}
+.equipped-badge {
+    position: absolute; bottom: 0; left: 0; width: 100%;
+    background: var(--neon-cyan); color: #000;
+    font-size: 0.6rem; text-align: center; font-weight: bold;
+    transform: scaleY(0); transform-origin: bottom; transition: 0.2s;
+}
+.item-slot:hover .equipped-badge { transform: scaleY(1); }
+
+/* === BUTTONS === */
+.btn-glitch {
+    position: relative; padding: 15px 30px;
+    background: transparent; color: var(--neon-cyan);
+    border: 1px solid var(--neon-cyan);
+    font-family: 'Orbitron'; letter-spacing: 2px;
+    text-decoration: none; overflow: hidden;
+    display: inline-block; margin-top: 20px; margin-right: 15px;
+    font-weight: bold;
+}
+.btn-glitch:hover { background: var(--neon-cyan); color: #000; box-shadow: 0 0 25px var(--neon-cyan); }
+
+/* === SECTION HEADERS === */
+.section-header { display: flex; align-items: center; margin-bottom: 40px; margin-top: 100px; }
+.section-line { height: 2px; flex: 1; background: linear-gradient(90deg, var(--neon-cyan), transparent); }
+.section-title {
+    font-family: 'Orbitron'; font-size: 2.5rem; color: #fff;
+    padding-right: 20px; text-transform: uppercase;
+}
+
+/* === FOOTER === */
+footer {
+    border-top: 1px solid #333; padding: 40px; text-align: center;
+    font-family: 'Share Tech Mono'; color: #666; margin-top: 100px;
+}
+
+/* === INTRO OVERLAY FOR AUDIO === */
+#start-overlay {
+    position: fixed; inset: 0; z-index: 25000;
+    background: #000;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    cursor: pointer;
+}
+.start-btn {
+    border: 2px solid var(--neon-green);
+    color: var(--neon-green);
+    padding: 20px 40px;
+    font-family: 'Orbitron';
+    font-size: 1.5rem;
+    text-transform: uppercase;
+    background: rgba(0, 255, 102, 0.1);
+    box-shadow: 0 0 30px rgba(0, 255, 102, 0.2);
+    animation: pulse 2s infinite;
+}
+@keyframes pulse { 0% { opacity:0.8; } 50% { opacity:1; box-shadow: 0 0 50px var(--neon-green); } 100% { opacity:0.8; } }
+
+/* === RESPONSIVE & MOBILE === */
+@media (max-width: 1024px) {
+    /* Hide custom cursor on touch devices to prevent lag */
+    .cursor-dot, .cursor-outline { display: none !important; }
+    * { cursor: auto !important; }
+
+    h1 { font-size: 12vw; } /* Mobile Title Size */
+    .role-badge { font-size: 0.9rem; padding: 10px; display: block; text-align: center; margin-top: 20px;}
+    .hud-panel { padding: 15px; }
+    .inventory-grid { grid-template-columns: repeat(2, 1fr); }
+    .section-header { flex-direction: column; align-items: flex-start; }
+    .section-title { font-size: 1.8rem; margin-bottom: 10px; padding: 0;}
+    .section-line { width: 100%; }
+    
+    .btn-glitch { display: block; width: 100%; text-align: center; margin-right: 0; }
+    
+    /* Adjust ThreeJS container for mobile performance */
+    #canvas-container { opacity: 0.3; } 
+}
+</style>
+</head>
+<body>
+
+<!-- === CLICK TO START (REQUIRED FOR AUDIO) === -->
+<div id="start-overlay" onclick="initializeSystem()">
+    <div class="start-btn">INITIALIZE SYSTEM</div>
+    <div style="margin-top:20px; font-family:'Share Tech Mono'; color:#666;">CLICK TO ENGAGE NEURAL LINK</div>
+</div>
+
+<!-- === LOADING SEQUENCE === -->
+<div id="boot-sequence">
+    <div class="boot-text" id="msg-1">INITIALIZING SYSTEM...</div>
+    <div class="boot-text" id="msg-2">ESTABLISHING CONNECTION</div>
+    <div class="boot-text" id="msg-3" style="font-size:3rem; color:#fff;">HI !!</div>
+    <div class="boot-text" id="msg-4" style="font-size:2.5rem; color:var(--neon-cyan);">I AM AMIT !!</div>
+    <div class="loader-bar"><div class="loader-progress"></div></div>
+</div>
+
+<!-- === CURSOR === -->
+<div class="cursor-dot"></div>
+<div class="cursor-outline"></div>
+
+<!-- === BG === -->
+<div id="canvas-container"></div>
+<div class="grid-overlay"></div>
+
+<!-- === TEXT LOGO TOP LEFT === -->
+<div class="logo-container" onclick="window.scrollTo(0,0)">
+    <div class="logo-main">CYBERAGE</div>
+    <div class="logo-sub">SYSTEMS</div>
+</div>
+
+<!-- === UI OVERLAY === -->
+<div style="position:fixed; top:20px; right:20px; z-index:100; font-family:'Share Tech Mono'; color:var(--neon-green); text-align:right;">
+    <div>SYS_STATUS: <span style="animation:blink 1s infinite">ONLINE</span></div>
+    <div style="font-size:0.8rem; color:#666;">LOC: INDIA // SECURE</div>
+</div>
+
+<div class="container">
+    
+    <!-- HEADER -->
+    <header>
+        <div style="font-family:'Share Tech Mono'; color:var(--neon-red); margin-bottom:10px;">>> IDENTITY_VERIFIED</div>
+        
+        <!-- GLITCH TEXT -->
+        <h1 class="glitch-text" data-text="CYBERAGE">CYBERAGE</h1>
+        <div class="owner-tag">OWNER: CYBERTORQUE</div>
+        
+        <div class="role-badge">AMIT KUMAR MAHATO // SECURITY_ARCHITECT</div>
+        
+        <div class="hud-panel" style="margin-top: 40px; max-width: 600px;">
+            <div style="color:#aaa; font-size:0.9rem; margin-bottom:10px;">// MISSION_STATEMENT</div>
+            <p style="margin:0; line-height:1.6; color:#e0f7ff;">
+                Operative specializing in Digital Forensics and Offensive Security.
+                Mission: Dismantle threats, secure infrastructures, and dominate the digital battlespace.
+                Currently stationed in India. Ready for remote deployment.
+            </p>
+        </div>
+
+        <div>
+            <a href="#projects" class="btn-glitch">INIT_PROJECTS</a>
+            <a href="#loadout" class="btn-glitch" style="border-color:var(--neon-green); color:var(--neon-green);">VIEW_LOADOUT</a>
+        </div>
+    </header>
+
+    <!-- LOADOUT (SKILLS) -->
+    <div class="section-header" id="loadout">
+        <h2 class="section-title">TACTICAL_LOADOUT</h2>
+        <div class="section-line"></div>
+    </div>
+
+    <!-- The Game-Like Inventory Grid -->
+    <div class="hud-panel">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <div style="font-family:'Orbitron'; color:var(--neon-cyan);">ACTIVE EQUIPMENT</div>
+            <div style="font-family:'Share Tech Mono'; color:#555;">SLOTS: 8/8</div>
+        </div>
+        
+        <div class="inventory-grid">
+            <!-- Item 1 -->
+            <div class="item-slot" title="Network Scanning">
+                <div class="item-level">LVL.99</div>
+                <i class="fas fa-network-wired item-icon"></i>
+                <div class="item-name">NMAP_SCANNER</div>
+                <div class="equipped-badge">EQUIPPED</div>
+            </div>
+            <!-- Item 2 -->
+            <div class="item-slot" title="Digital Forensics">
+                <div class="item-level">LVL.85</div>
+                <i class="fas fa-search item-icon"></i>
+                <div class="item-name">AUTOPSY_KIT</div>
+                <div class="equipped-badge">EQUIPPED</div>
+            </div>
+            <!-- Item 3 -->
+            <div class="item-slot" title="Packet Analysis">
+                <div class="item-level">LVL.90</div>
+                <i class="fas fa-wave-square item-icon"></i>
+                <div class="item-name">WIRESHARK</div>
+                <div class="equipped-badge">EQUIPPED</div>
+            </div>
+            <!-- Item 4 -->
+            <div class="item-slot" title="Web Exploitation">
+                <div class="item-level">LVL.80</div>
+                <i class="fas fa-bug item-icon"></i>
+                <div class="item-name">BURP_SUITE</div>
+                <div class="equipped-badge">EQUIPPED</div>
+            </div>
+            <!-- Item 5 -->
+            <div class="item-slot" title="SIEM / Splunk">
+                <div class="item-level">LVL.75</div>
+                <i class="fas fa-shield-alt item-icon"></i>
+                <div class="item-name">SPLUNK_DEF</div>
+                <div class="equipped-badge">EQUIPPED</div>
+            </div>
+            <!-- Item 6 -->
+            <div class="item-slot" title="Scripting">
+                <div class="item-level">LVL.88</div>
+                <i class="fab fa-python item-icon"></i>
+                <div class="item-name">PYTHON_SCRIPT</div>
+                <div class="equipped-badge">EQUIPPED</div>
+            </div>
+            <!-- Item 7 -->
+            <div class="item-slot" title="Operating Systems">
+                <div class="item-level">LVL.MAX</div>
+                <i class="fab fa-linux item-icon"></i>
+                <div class="item-name">KALI_LINUX</div>
+                <div class="equipped-badge">EQUIPPED</div>
+            </div>
+            <!-- Item 8 -->
+            <div class="item-slot" title="Report Writing">
+                <div class="item-level">LVL.100</div>
+                <i class="fas fa-file-alt item-icon"></i>
+                <div class="item-name">DOC_GEN</div>
+                <div class="equipped-badge">EQUIPPED</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PROJECTS -->
+    <div class="section-header" id="projects">
+        <h2 class="section-title">MISSION_LOGS</h2>
+        <div class="section-line"></div>
+    </div>
+
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap:30px;">
+        <!-- Project 1 -->
+        <div class="hud-panel">
+            <h3 style="color:var(--neon-green); font-family:'Orbitron'; margin-top:0;">FORENSIC_AUTOPSY.LOG</h3>
+            <p style="color:#ccc; font-size:0.9rem;">
+                Recovered deleted artifacts from a compromised NTFS drive. Reconstructed attack timeline using metadata analysis and file carving.
+            </p>
+            <div style="margin-top:20px; border-top:1px solid #333; padding-top:10px; display:flex; justify-content:space-between;">
+                <span style="color:var(--neon-cyan); font-size:0.8rem;">[TOOLS: AUTOPSY, FTK]</span>
+                <a href="#" style="color:#fff; text-decoration:none;">ACCESS >></a>
+            </div>
+        </div>
+
+        <!-- Project 2 -->
+        <div class="hud-panel">
+            <h3 style="color:var(--neon-green); font-family:'Orbitron'; margin-top:0;">PACKET_HUNT.PCAP</h3>
+            <p style="color:#ccc; font-size:0.9rem;">
+                Identified C2 beaconing in 5GB of network traffic. Isolated malicious DNS queries and flagged exfiltration attempts via port 53.
+            </p>
+            <div style="margin-top:20px; border-top:1px solid #333; padding-top:10px; display:flex; justify-content:space-between;">
+                <span style="color:var(--neon-cyan); font-size:0.8rem;">[TOOLS: WIRESHARK, ZEEK]</span>
+                <a href="#" style="color:#fff; text-decoration:none;">ACCESS >></a>
+            </div>
+        </div>
+
+        <!-- Project 3 -->
+        <div class="hud-panel">
+            <h3 style="color:var(--neon-green); font-family:'Orbitron'; margin-top:0;">SIEM_DEFENSE.RULE</h3>
+            <p style="color:#ccc; font-size:0.9rem;">
+                Developed custom SPL correlations to detect brute-force patterns. Automated incident response for rapid containment.
+            </p>
+            <div style="margin-top:20px; border-top:1px solid #333; padding-top:10px; display:flex; justify-content:space-between;">
+                <span style="color:var(--neon-cyan); font-size:0.8rem;">[TOOLS: SPLUNK, ELK]</span>
+                <a href="#" style="color:#fff; text-decoration:none;">ACCESS >></a>
+            </div>
+        </div>
+    </div>
+
+    <!-- CERTIFICATES -->
+    <div class="section-header">
+        <h2 class="section-title">ACHIEVEMENTS</h2>
+        <div class="section-line"></div>
+    </div>
+    
+    <div style="display:flex; gap:20px; flex-wrap:wrap;">
+        <div class="hud-panel" style="flex:1; min-width:250px; text-align:center;">
+            <i class="fas fa-award" style="font-size:3rem; color:var(--neon-cyan); margin-bottom:15px;"></i>
+            <div style="font-weight:bold; color:#fff;">CEH v12</div>
+            <div style="color:#666; font-size:0.8rem;">CERTIFIED ETHICAL HACKER</div>
+        </div>
+        <div class="hud-panel" style="flex:1; min-width:250px; text-align:center;">
+            <i class="fas fa-user-graduate" style="font-size:3rem; color:var(--neon-green); margin-bottom:15px;"></i>
+            <div style="font-weight:bold; color:#fff;">M.Sc. CYBER SECURITY</div>
+            <div style="color:#666; font-size:0.8rem;">ADITYA UNIVERSITY</div>
+        </div>
+        <div class="hud-panel" style="flex:1; min-width:250px; text-align:center;">
+            <i class="fas fa-crown" style="font-size:3rem; color:var(--neon-red); margin-bottom:15px;"></i>
+            <div style="font-weight:bold; color:#fff;">CTF WINNER</div>
+            <div style="color:#666; font-size:0.8rem;">DIAMOND LEAGUE - 1ST PLACE</div>
+        </div>
+    </div>
+
+    <footer>
+        <div>// END_OF_LINE</div>
+        <div style="margin-top:10px;">
+            <a href="https://linkedin.com/in/amit-kumar-mahato-859206226" style="color:var(--neon-cyan); margin:0 10px; text-decoration:none;">LINKEDIN</a>
+            <a href="https://github.com/winxx-ops" style="color:var(--neon-cyan); margin:0 10px; text-decoration:none;">GITHUB</a>
+            <a href="mailto:youremail@example.com" style="color:var(--neon-cyan); margin:0 10px; text-decoration:none;">EMAIL</a>
+        </div>
+        <div style="margin-top:20px; color:#444;">© 2025 CYBERAGE // OWNER: CYBERTORQUE</div>
+    </footer>
+</div>
+
+<script>
+    // 0. AUDIO SYNTHESIS (Browser-compatible Sound Generation)
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    function playSound(type) {
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        if (type === 'hover') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.1);
+            gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.1);
+        } else if (type === 'click') {
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.1);
+        } else if (type === 'boot') {
+            // Power up sound
+            const osc2 = audioCtx.createOscillator();
+            const gain2 = audioCtx.createGain();
+            osc2.connect(gain2);
+            gain2.connect(audioCtx.destination);
+            
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(50, audioCtx.currentTime);
+            osc.frequency.linearRampToValueAtTime(400, audioCtx.currentTime + 2);
+            gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 2);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + 2);
+        }
+    }
+
+    // 1. BOOT SEQUENCE ANIMATION (GSAP)
+    function initializeSystem() {
+        // Remove start overlay
+        const overlay = document.getElementById('start-overlay');
+        gsap.to(overlay, { opacity: 0, duration: 0.5, onComplete: () => overlay.style.display = 'none' });
+        
+        // Play Boot Sound
+        playSound('boot');
+
+        const tl = gsap.timeline();
+        
+        // Show loading bar
+        document.querySelector('.loader-bar').style.display = 'block';
+
+        tl.to(".loader-progress", { width: "100%", duration: 3, ease: "power1.inOut" })
+          .to("#msg-1", { opacity: 1, duration: 0.5, y: 0 }, "-=2.5")
+          .to("#msg-1", { opacity: 0, duration: 0.5, delay: 0.5 })
+          .to("#msg-2", { opacity: 1, duration: 0.5 })
+          .to("#msg-2", { opacity: 0, duration: 0.5, delay: 0.5 })
+          .to("#msg-3", { opacity: 1, scale: 1.2, duration: 0.3, ease: "back.out" })
+          .to("#msg-3", { opacity: 0, duration: 0.3, delay: 0.5 })
+          .to("#msg-4", { opacity: 1, scale: 1.1, duration: 0.5, ease: "back.out" })
+          .to("#msg-4", { opacity: 0, duration: 0.5, delay: 0.8 })
+          .to("#boot-sequence", { opacity: 0, duration: 1, pointerEvents: "none" })
+          .from("header", { opacity: 0, y: 50, duration: 1 });
+    }
+
+    // 2. CURSOR LOGIC (Desktop Only)
+    const cursorDot = document.querySelector('.cursor-dot');
+    const cursorOutline = document.querySelector('.cursor-outline');
+
+    if (window.matchMedia("(min-width: 1025px)").matches) {
+        window.addEventListener("mousemove", (e) => {
+            const x = e.clientX;
+            const y = e.clientY;
+            
+            cursorDot.style.left = `${x}px`;
+            cursorDot.style.top = `${y}px`;
+            
+            cursorOutline.animate({
+                left: `${x}px`,
+                top: `${y}px`
+            }, { duration: 500, fill: "forwards" });
+        });
+
+        // Interactive Elements for Desktop
+        document.querySelectorAll('a, .item-slot, .hud-panel, .logo-container').forEach(el => {
+            el.addEventListener('mouseenter', () => {
+                cursorOutline.style.transform = "translate(-50%, -50%) scale(1.5) rotate(45deg)";
+                cursorOutline.style.borderColor = "var(--neon-green)";
+                playSound('hover');
+            });
+            el.addEventListener('mouseleave', () => {
+                cursorOutline.style.transform = "translate(-50%, -50%) scale(1) rotate(0deg)";
+                cursorOutline.style.borderColor = "var(--neon-cyan)";
+            });
+            el.addEventListener('click', () => playSound('click'));
+        });
+    } else {
+        // Mobile interactions
+        document.querySelectorAll('a, .item-slot, .hud-panel').forEach(el => {
+            el.addEventListener('touchstart', () => playSound('hover'));
+        });
+    }
+
+    // 3. THREE.JS BACKGROUND
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({alpha:true});
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+    // Create a geometric grid floor
+    const gridHelper = new THREE.GridHelper(100, 100, 0x00f3ff, 0x003344);
+    scene.add(gridHelper);
+    gridHelper.position.y = -5;
+    
+    // Floating Particles
+    const particlesGeo = new THREE.BufferGeometry();
+    const particlesCount = 500;
+    const posArray = new Float32Array(particlesCount*3);
+    for(let i=0; i<particlesCount*3; i++) {
+        posArray[i] = (Math.random()-0.5)*50;
+    }
+    particlesGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+    const particlesMat = new THREE.PointsMaterial({size:0.05, color:0x00ff66});
+    const particlesMesh = new THREE.Points(particlesGeo, particlesMat);
+    scene.add(particlesMesh);
+
+    // CENTRAL CORE OBJECT (ICO)
+    const geometry = new THREE.IcosahedronGeometry(3, 1);
+    const material = new THREE.MeshBasicMaterial( { color: 0x00f3ff, wireframe: true, transparent: true, opacity: 0.1 } );
+    const core = new THREE.Mesh( geometry, material );
+    scene.add( core );
+    
+    const innerGeo = new THREE.IcosahedronGeometry(1.5, 0);
+    const innerMat = new THREE.MeshBasicMaterial( { color: 0x00ff66, wireframe: true } );
+    const innerCore = new THREE.Mesh(innerGeo, innerMat);
+    core.add(innerCore);
+
+    camera.position.z = 10;
+    camera.position.y = 2;
+
+    function animate() {
+        requestAnimationFrame(animate);
+        particlesMesh.rotation.y += 0.001;
+        gridHelper.rotation.y += 0.002;
+        
+        // Rotate Core
+        core.rotation.x += 0.002;
+        core.rotation.y += 0.005;
+        innerCore.rotation.y -= 0.01;
+
+        renderer.render(scene, camera);
+    }
+    animate();
+
+    // Resize
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth/window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // 4. GLITCH TEXT CSS INJECT
+    const styleSheet = document.createElement("style");
+    styleSheet.innerText = `
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+        .glitch-text {
+            position: relative;
+        }
+        .glitch-text::before, .glitch-text::after {
+            content: attr(data-text);
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        }
+        .glitch-text::before {
+            left: 2px; text-shadow: -1px 0 var(--neon-red);
+            clip: rect(44px, 450px, 56px, 0);
+            animation: glitch-anim 5s infinite linear alternate-reverse;
+        }
+        .glitch-text::after {
+            left: -2px; text-shadow: -1px 0 var(--neon-cyan);
+            clip: rect(44px, 450px, 56px, 0);
+            animation: glitch-anim-2 5s infinite linear alternate-reverse;
+        }
+        @keyframes glitch-anim {
+            0% { clip: rect(10px, 9999px, 30px, 0); }
+            20% { clip: rect(80px, 9999px, 10px, 0); }
+            40% { clip: rect(40px, 9999px, 80px, 0); }
+            60% { clip: rect(30px, 9999px, 10px, 0); }
+            80% { clip: rect(50px, 9999px, 90px, 0); }
+            100% { clip: rect(20px, 9999px, 60px, 0); }
+        }
+        @keyframes glitch-anim-2 {
+            0% { clip: rect(60px, 9999px, 10px, 0); }
+            20% { clip: rect(20px, 9999px, 50px, 0); }
+            40% { clip: rect(10px, 9999px, 30px, 0); }
+            60% { clip: rect(90px, 9999px, 10px, 0); }
+            80% { clip: rect(30px, 9999px, 70px, 0); }
+            100% { clip: rect(50px, 9999px, 20px, 0); }
+        }
+    `;
+    document.head.appendChild(styleSheet);
+    
+    // 5. VANILLA TILT INIT
+    VanillaTilt.init(document.querySelectorAll(".hud-panel"), {
+		max: 10,
+		speed: 400,
+        glare: true,
+        "max-glare": 0.2,
+	});
+</script>
+</body>
+</html>
